@@ -1,0 +1,33 @@
+#!/bin/sh
+
+# Usage: proxy up/down
+PROXY_CMD=""
+
+# Start proxy connection, enable SOCKS proxy in settings
+socks_on() {
+   echo 'Initializing tunnel'
+   # $PROXY_CMD
+   sudo networksetup -setsocksfirewallproxystate Wi-Fi on
+}
+
+# Disable SOCKS proxy in settings. (Leave connection alone for now)
+socks_off() {
+   echo 'Tearing down tunnel'
+   sudo networksetup -setsocksfirewallproxystate Wi-Fi off
+}
+
+socks_help() {
+   # This means that no action was given, show usage string and quit
+   echo 'Usage: proxy up/down'
+   exit -1
+}
+
+ACTION="$1"
+
+if [ "$ACTION" = "on" ]; then
+   socks_on
+elif [ "$ACTION" = "off" ]; then
+   socks_off
+else
+   socks_help
+fi
