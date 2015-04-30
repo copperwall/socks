@@ -2,8 +2,9 @@
 
 REMOTE_USER="user"            # Your username on the remote machine.
 REMOTE_ADDR="127.0.0.1"       # The IP address or domain name to connect to.
+LOCAL_PORT="2000"             # The port you have set up to forward local traffic through.
 SSH_PORT="22"                 # Whatever port ssh is listening on (usually 22).
-ERROR_LOG="/dev/null"         # /dev/null
+ERROR_LOG="$HOME/.proxy.log"  # Error stuff will go here.
 PID_FILE="$HOME/.proxy.pid"   # Store the SSH pid so that we can kill it on teardown.
 
 PROXY_CMD="ssh -ND $LOCAL_PORT $REMOTE_USER@$REMOTE_ADDR -p $SSH_PORT"
