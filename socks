@@ -1,24 +1,35 @@
 #!/bin/sh
 
-# Usage: proxy up/down
-PROXY_CMD=""
+REMOTE_USER="user"            # Your username on the remote machine.
+REMOTE_ADDR="127.0.0.1"       # The IP address or domain name to connect to.
+SSH_PORT="22"                 # Whatever port ssh is listening on (usually 22).
+ERROR_LOG="/dev/null"         # /dev/null
+PID_FILE="$HOME/.proxy.pid"   # Store the SSH pid so that we can kill it on teardown.
+
+PROXY_CMD="ssh -ND $LOCAL_PORT $REMOTE_USER@$REMOTE_ADDR -p $SSH_PORT"
 
 # Start proxy connection, enable SOCKS proxy in settings
 socks_on() {
-   echo 'Initializing tunnel'
-   # $PROXY_CMD
+   echo 'Initializing tunnel...'
+   $PROXY_CMD 2> $ERROR_LOG &
+   echo $! > $PID_FILE
+
+   # Enable Proxy
    sudo networksetup -setsocksfirewallproxystate Wi-Fi on
 }
 
-# Disable SOCKS proxy in settings. (Leave connection alone for now)
+# Disable SOCKS proxy in settings and kill ssh process
 socks_off() {
-   echo 'Tearing down tunnel'
+   echo 'Tearing down tunnel...'
+   kill `cat $PID_FILE`
+
+   # Truncate pid file
+   echo '' > $PID_FILE
    sudo networksetup -setsocksfirewallproxystate Wi-Fi off
 }
 
 socks_help() {
-   # This means that no action was given, show usage string and quit
-   echo 'Usage: proxy up/down'
+   echo 'Usage: socks on/off (Get it? Like socks?)'
    exit -1
 }
 
