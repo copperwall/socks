@@ -11,7 +11,7 @@ PROXY_CMD="ssh -ND $LOCAL_PORT $REMOTE_USER@$REMOTE_ADDR -p $SSH_PORT"
 
 # Start proxy connection, enable SOCKS proxy in settings
 socks_on() {
-   echo 'Initializing tunnel...'
+   echo "Initializing tunnel at port $LOCAL_PORT..."
    $PROXY_CMD 2> $ERROR_LOG &
    echo $! > $PID_FILE
 
@@ -21,7 +21,7 @@ socks_on() {
 
 # Disable SOCKS proxy in settings and kill ssh process
 socks_off() {
-   echo 'Tearing down tunnel...'
+   echo "Tearing down tunnel at $LOCAL_PORT..."
    kill `cat $PID_FILE`
 
    # Truncate pid file
@@ -63,10 +63,9 @@ socks_refresh() {
 
    if [ -n "$SSH_PID" ]; then
       SSH_RUNNING=`ps -p $SSH_PID | awk 'NR>1'`
-      echo $SSH_RUNNING
 
       if [ -n "$SSH_RUNNING" ]; then
-         kill `cat $PID_FILE`
+         kill $SSH_PID
       fi
    fi
 
