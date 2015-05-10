@@ -29,8 +29,54 @@ socks_off() {
    sudo networksetup -setsocksfirewallproxystate Wi-Fi off
 }
 
+# Print out information about whether a tunnel is running and if the proxy
+# setting is on
+socks_status() {
+   SSH_PID=`cat $PID_FILE`
+
+   if [ -z "$SSH_PID" ]; then
+      NUM_LINES=""
+   else
+      NUM_LINES=`ps -p $SSH_PID | awk 'NR>1'`
+   fi
+
+   # Strip first row from ps output
+   # If no other rows, process is not running
+   if [ -z "$NUM_LINES" ]; then
+      # SSH tunnel is not running
+      echo "SSH tunnel is NOT running."
+   else
+      echo "SSH tunnel is running."
+      echo "Process Info:"
+      ps -p $SSH_PID
+   fi
+
+   printf "\n"
+
+   echo "Proxy Setting Status:"
+   networksetup -getsocksfirewallproxy Wi-Fi
+}
+
+socks_refresh() {
+   # If pid file is not empty, see if the process is running and kill it.
+   SSH_PID=`cat $PID_FILE`
+
+   if [ -n "$SSH_PID" ]; then
+      SSH_RUNNING=`ps -p $SSH_PID | awk 'NR>1'`
+      echo $SSH_RUNNING
+
+      if [ -n "$SSH_RUNNING" ]; then
+         kill `cat $PID_FILE`
+      fi
+   fi
+
+   # Rerun ssh connection
+   $PROXY_CMD 2> $ERROR_LOG &
+   echo $! > $PID_FILE
+}
+
 socks_help() {
-   echo 'Usage: socks on/off (Get it? Like socks?)'
+   echo 'Usage: socks on/off/status/refresh (Get it? Like socks?)'
    exit -1
 }
 
@@ -40,6 +86,10 @@ if [ "$ACTION" = "on" ]; then
    socks_on
 elif [ "$ACTION" = "off" ]; then
    socks_off
+elif [ "$ACTION" = "status" ]; then
+   socks_status
+elif [ "$ACTION" = "refresh" ]; then
+   socks_refresh
 else
    socks_help
 fi
