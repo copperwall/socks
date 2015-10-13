@@ -46,16 +46,29 @@ socks_on() {
    echo $! > $PID_FILE
 
    # Enable Proxy
+   echo "Turning system proxy on..."
    sudo networksetup -setsocksfirewallproxystate Wi-Fi on
 }
 
 # Disable SOCKS proxy in settings and kill ssh process
 socks_off() {
-   echo "Tearing down tunnel at $LOCAL_PORT..."
-   kill `cat $PID_FILE`
+   SSH_PID=`cat $PID_FILE`
+   IS_RUNNING=`ps -p $SSH_PID | awk 'NR>1'`
+
+   # Pid exists
+   if [ -z "$SSH_PID" ]; then
+      echo "Pidfile is empty, whoops"
+   elif [ -z "$IS_RUNNING" ]; then
+      echo "Tunnel at $LOCAL_PORT is no longer running"
+   else
+      echo "Tearing down tunnel at $LOCAL_PORT..."
+      kill `cat $PID_FILE`
+   fi
 
    # Truncate pid file
    echo '' > $PID_FILE
+
+   echo "Turning off system proxy..."
    sudo networksetup -setsocksfirewallproxystate Wi-Fi off
 }
 
