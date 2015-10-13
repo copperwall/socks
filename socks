@@ -4,14 +4,44 @@ REMOTE_USER="user"            # Your username on the remote machine.
 REMOTE_ADDR="127.0.0.1"       # The IP address or domain name to connect to.
 LOCAL_PORT="2000"             # The port you have set up to forward local traffic through.
 SSH_PORT="22"                 # Whatever port ssh is listening on (usually 22).
+IDENTITY_FILE=""
 ERROR_LOG="$HOME/.proxy.log"  # Error stuff will go here.
 PID_FILE="$HOME/.proxy.pid"   # Store the SSH pid so that we can kill it on teardown.
 
-PROXY_CMD="ssh -ND $LOCAL_PORT $REMOTE_USER@$REMOTE_ADDR -p $SSH_PORT"
+## Builds the SSH command with the given variables
+# Required
+#  remote_addr
+#  local_port
+# Optional
+#  user
+#  ssh_port
+#  identity_file
+build_ssh_cmd() {
+   ssh_cmd="ssh "
+
+   if [ -n "$IDENTITY_FILE" ]; then
+      ssh_cmd="$ssh_cmd -i $IDENTITY_FILE"
+   fi
+
+   ssh_cmd="$ssh_cmd -ND $LOCAL_PORT"
+
+   if [ -n "$REMOTE_USER" ]; then
+      ssh_cmd="$ssh_cmd $REMOTE_USER@$REMOTE_ADDR"
+   else
+      ssh_cmd="$ssh_cmd $REMOTE_ADDR"
+   fi
+
+   if [ -n "$SSH_PORT" ]; then
+      ssh_cmd="$ssh_cmd -p $SSH_PORT"
+   fi
+
+   echo $ssh_cmd
+}
 
 # Start proxy connection, enable SOCKS proxy in settings
 socks_on() {
    echo "Initializing tunnel at port $LOCAL_PORT..."
+   PROXY_CMD=$(build_ssh_cmd)
    $PROXY_CMD 2> $ERROR_LOG &
    echo $! > $PID_FILE
 
@@ -70,6 +100,7 @@ socks_refresh() {
    fi
 
    # Rerun ssh connection
+   PROXY_CMD=$(build_ssh_cmd)
    $PROXY_CMD 2> $ERROR_LOG &
    echo $! > $PID_FILE
 }
